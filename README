@@ -1,0 +1,16 @@
+example showing how unit and integration tests work with ember.js 1.0
+
+To run the javascript tests
+
+    npm install
+    export PATH="./node_modules/.bin:$PATH"
+    karma start
+
+
+To run the ember.js web app locally
+
+    npm install
+    export PATH="./node_modules/.bin:$PATH"
+
+    ./bin/server
+    http://localhost:3000
