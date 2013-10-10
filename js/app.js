@@ -57,6 +57,25 @@ App.Person = Ember.Object.extend({
     }.property('firstName', 'lastName')
 });
 
+var ajaxPromise = function(url, type, hash) {
+    return new Ember.RSVP.Promise(function(resolve, reject) {
+        hash = hash || {};
+        hash.url = url;
+        hash.type = type;
+        hash.dataType = 'json';
+
+        hash.success = function(json) {
+            Ember.run(null, resolve, json);
+        };
+
+        hash.error = function(jqXHR, textStatus, errorThrown) {
+            Ember.run(null, reject, adapter.ajaxError(jqXHR));
+        };
+
+        $.ajax(hash);
+    });
+}
+
 App.Person.reopenClass({
     people: [],
     add: function(hash) {
@@ -69,13 +88,8 @@ App.Person.reopenClass({
     find: function() {
         var self = this;
 
-        var peoplePromise = new Ember.RSVP.Promise(function(resolve, reject) {
-            $.getJSON('/api/people/', resolve).fail(reject);
-        });
-
-        var catPromise = new Ember.RSVP.Promise(function(resolve, reject) {
-            $.getJSON('/api/cats/', resolve).fail(reject);
-        });
+        var peoplePromise = ajaxPromise('/api/people/', "GET");
+        var catPromise = ajaxPromise('/api/cats/', "GET");
 
         Ember.RSVP.all([peoplePromise, catPromise]).then(function(things) {
             things.forEach(function(thing) {
