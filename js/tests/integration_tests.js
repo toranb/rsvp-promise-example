@@ -25,3 +25,14 @@ test('delete will remove the person for a given row', function() {
         equal(find("table tr").length, 1, "the table of people was not complete");
     });
 });
+
+test('errors will be handled correctly', function(){
+    $.mockjaxClear();
+    stubEndpointForHttpRequest('/api/people/', {error: "ajax blew up"}, 400);
+
+    App.reset();
+
+    visit("/").then(function(){
+      equal($.trim(find("div.error").text()), "ajax blew up", "ajax error was not present");
+    });
+});
