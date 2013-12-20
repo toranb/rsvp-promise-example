@@ -2,11 +2,11 @@ function stubEndpointForHttpRequest(url, json, status) {
     if (status == null) {
         status = 200;
     }
+
     $.mockjax({
         type: "GET",
         url: url,
         status: status,
-        dataType: 'json',
         responseText: json
     });
 }
@@ -15,12 +15,13 @@ $.mockjaxSettings.logging = false;
 $.mockjaxSettings.responseTime = 0;
 
 var people = [{firstName: 'toran', lastName: 'billups'}, {firstName: 'todd', lastName: 'zombie'}];
-var cats = [{firstName: 'cat', lastName: 'hat'}, {firstName: 'mat', lastName: 'rat'}];
 stubEndpointForHttpRequest('/api/people/', people, 200);
-stubEndpointForHttpRequest('/api/cats/', cats, 200);
-//stubEndpointForHttpRequest('/api/cats/', "ajax blew up", 400);
 
-App = Ember.Application.create();
+App = Ember.Application.create({
+  setError: function(error){
+      this.set('error', error);
+  }
+});
 
 App.Router.map(function() {
     this.resource("people", { path: "/" });
@@ -68,8 +69,8 @@ var ajaxPromise = function(url, type, hash) {
             Ember.run(null, resolve, json);
         };
 
-        hash.error = function(jqXHR, textStatus, errorThrown) {
-            Ember.run(null, reject, adapter.ajaxError(jqXHR));
+        hash.error = function(json) {
+            Ember.run(null, reject, json);
         };
 
         $.ajax(hash);
@@ -89,17 +90,16 @@ App.Person.reopenClass({
         var self = this;
 
         var peoplePromise = ajaxPromise('/api/people/', "GET");
-        var catPromise = ajaxPromise('/api/cats/', "GET");
 
-        Ember.RSVP.all([peoplePromise, catPromise]).then(function(things) {
+        Ember.RSVP.all([peoplePromise]).then(function(things) {
             things.forEach(function(thing) {
                 thing.forEach(function(hash) {
                     var thing = App.Person.create(hash);
                     Ember.run(self.people, self.people.pushObject, thing);
                 });
             });
-        }, function(value) {
-            alert(value.status + ": promise failed " + value.responseText);
+        }, function(serverResponse) {
+            App.setError(serverResponse.responseJSON.error);
         });
 
         return this.people;
